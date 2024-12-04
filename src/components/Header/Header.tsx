@@ -1,5 +1,3 @@
-import React from "react";
-
 const Header = () => {
   return (
     <header className="bg-gradient-to-b from-header-bg to-bg-gradient p-4 flex justify-between items-center">

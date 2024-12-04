@@ -1,5 +1,3 @@
-import React from "react";
-
 const Footer = () => {
   return (
     <footer className="bg-gradient-to-b from-bg-gradient to-footer-bg text-footer-text text-left py-4 pl-4 w-full mt-auto">
