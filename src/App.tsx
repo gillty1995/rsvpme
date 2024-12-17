@@ -1,7 +1,16 @@
 import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
+
 import Header from "./components/Header/Header";
 import MainContent from "./components/MainContent/MainContent";
+import RsvpForm from "./components/RsvpForm/RsvpForm";
 import Footer from "./components/Footer/Footer";
+
 import RSVPImage from "./assets/beach-day.jpg";
 import RSVPImage2 from "./assets/friends.jpg";
 import RSVPImage3 from "./assets/party.jpg";
@@ -17,7 +26,9 @@ interface ImageData {
   src: string;
 }
 
-const App: React.FC = () => {
+const Home: React.FC = () => {
+  const navigate = useNavigate();
+
   const images: ImageData[] = [
     { id: 1, src: RSVPImage },
     { id: 2, src: RSVPImage2 },
@@ -29,15 +40,27 @@ const App: React.FC = () => {
     { id: 8, src: RSVPImage8 },
   ];
 
+  const handleCreateRsvp = () => {
+    navigate("/rsvp-form");
+  };
+
   return (
     <div className="min-h-screen bg-main-bg flex flex-col">
       <Header />
-      <MainContent
-        images={images}
-        onCreateRSVP={() => alert("Redirect to Create RSVP form")}
-      />
+      <MainContent images={images} onCreateRSVP={handleCreateRsvp} />
       <Footer />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/rsvp-form" element={<RsvpForm />} />
+      </Routes>
+    </Router>
   );
 };
 
