@@ -8,6 +8,7 @@ import { eventOptions } from "../../utils/eventOptions";
 const RsvpForm: React.FC = () => {
   const [eventName, setEventName] = useState("");
   const [eventType, setEventType] = useState("");
+  const [eventTime, setEventTime] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [location, setLocation] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -111,6 +112,22 @@ const RsvpForm: React.FC = () => {
             onChange={(e) => setLocation(e.target.value)}
             className={`w-full p-3 border border-gray-300 rounded-md ${
               location ? "text-black" : "text-gray-400"
+            }`}
+          />
+        </div>
+
+        {/* Event Time Input */}
+        <div className="mb-4">
+          <label htmlFor="eventTime" className="block mb-2 text-lg font-medium">
+            Event Time
+          </label>
+          <input
+            type="datetime-local"
+            id="eventTime"
+            value={eventTime}
+            onChange={(e) => setEventTime(e.target.value)}
+            className={`w-full p-3 border border-gray-300 rounded-md ${
+              eventTime ? "text-black" : "text-gray-400"
             }`}
           />
         </div>
