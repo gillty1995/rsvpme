@@ -1,14 +1,13 @@
-import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
+import React, { useRef } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header/Header";
 import MainContent from "./components/MainContent/MainContent";
+import About from "./components/About/About";
+import Contact from "./components/Contact/Contact";
 import RsvpForm from "./components/RsvpForm/RsvpForm";
+import CreateRsvp from "./components/CreateRsvp/CreateRsvp";
+import Rsvps from "./components/Rsvps/Rsvps";
 import Footer from "./components/Footer/Footer";
 
 import RSVPImage from "./assets/beach-day.jpg";
@@ -27,7 +26,9 @@ interface ImageData {
 }
 
 const Home: React.FC = () => {
-  const navigate = useNavigate();
+  const aboutRef = useRef<null | HTMLDivElement>(null);
+  const contactRef = useRef<null | HTMLDivElement>(null);
+  const rsvpsRef = useRef<null | HTMLDivElement>(null);
 
   const images: ImageData[] = [
     { id: 1, src: RSVPImage },
@@ -41,13 +42,20 @@ const Home: React.FC = () => {
   ];
 
   const handleCreateRsvp = () => {
-    navigate("/rsvp-form");
+    // Navigate to the RSVP form
+    window.location.href = "/rsvp-form";
   };
 
   return (
     <div className="min-h-screen bg-main-bg flex flex-col">
-      <Header />
+      <Header aboutRef={aboutRef} contactRef={contactRef} rsvpsRef={rsvpsRef} />
       <MainContent images={images} onCreateRSVP={handleCreateRsvp} />
+      <div ref={aboutRef}>
+        <About />
+      </div>
+      <div ref={contactRef}>
+        <Contact />
+      </div>
       <Footer />
     </div>
   );
@@ -59,6 +67,8 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/rsvp-form" element={<RsvpForm />} />
+        <Route path="/created-rsvp/:eventId" element={<CreateRsvp />} />
+        <Route path="/my-events" element={<Rsvps />} />
       </Routes>
     </Router>
   );

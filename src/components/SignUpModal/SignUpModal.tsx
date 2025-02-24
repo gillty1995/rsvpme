@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import ModalWithForm from "../ModalWithForm/ModalWithForm";
+import GoogleIcon from "../../assets/google-icon.svg";
 
 interface SignUpModalProps {
   isOpen: boolean;
@@ -7,63 +9,37 @@ interface SignUpModalProps {
 }
 
 const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Sign Up submitted", { email, password });
-    // Add your signup logic here
-  };
-
-  const handleThirdPartyLogin = (platform: string) => {
-    console.log(`Sign up via ${platform}`);
-    // Add Google, Apple, etc., sign up logic here
-  };
+  const { loginWithRedirect } = useAuth0();
 
   return (
     <ModalWithForm title="Sign Up" isOpen={isOpen} onClose={onClose}>
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col space-y-4 text-left mt-8"
-      >
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="p-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="p-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-          required
-        />
+      <div className="flex flex-col space-y-4 text-left mt-8">
+        {/* Sign Up with Email Button */}
         <button
-          type="submit"
-          className="bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-all duration-300"
+          onClick={() =>
+            loginWithRedirect({
+              authorizationParams: { screen_hint: "signup" },
+            })
+          }
+          className="bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-all duration-300"
         >
-          Sign Up
+          Sign Up with Email
         </button>
-      </form>
 
-      {/* Social Media Buttons */}
-      <div className="flex justify-center space-x-4 mt-4">
+        {/* Sign Up with Google Button */}
         <button
-          onClick={() => handleThirdPartyLogin("Google")}
-          className="bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition-all duration-300"
+          onClick={() =>
+            loginWithRedirect({
+              authorizationParams: {
+                connection: "google-oauth2",
+                screen_hint: "signup",
+              },
+            })
+          }
+          className="flex items-center justify-center bg-white text-gray-700 border border-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-all duration-300 shadow-md"
         >
+          <img src={GoogleIcon} alt="Google logo" className="w-5 h-5 mr-3" />
           Sign Up with Google
-        </button>
-        <button
-          onClick={() => handleThirdPartyLogin("Apple")}
-          className="bg-black text-white py-2 px-4 rounded-full hover:bg-gray-800 transition-all duration-300"
-        >
-          Sign Up with Apple
         </button>
       </div>
     </ModalWithForm>
