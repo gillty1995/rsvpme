@@ -16,10 +16,7 @@ const RsvpForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-
-  // Use Auth0 hook to check user authentication
-  const { user, isAuthenticated, loginWithRedirect, getAccessTokenSilently } =
-    useAuth0();
+  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
 
   // Log the user ID if the user is authenticated
   useEffect(() => {
@@ -29,42 +26,49 @@ const RsvpForm: React.FC = () => {
   }, [isAuthenticated, user]);
 
   const handleCreateRSVP = async () => {
-    if (!isAuthenticated) {
-      // Redirect to login if the user is not authenticated
-      loginWithRedirect();
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
-    // Get the JWT token
-    const token = await getAccessTokenSilently();
+    // Ensure selected event type is valid
+    if (!eventOptions.includes(eventType)) {
+      setError("Invalid event type selected.");
+      console.error("Invalid event type selected:", eventType);
+      setLoading(false);
+      return;
+    }
+
+    // Convert date to ISO format before sending
+    const formattedDate = new Date(eventTime).toISOString();
 
     try {
+      // Include token only if the user is logged in
+      const token = isAuthenticated ? await getAccessTokenSilently() : null;
+
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/events`,
         {
           name: eventName,
           type: eventType,
-          date: eventTime,
+          date: formattedDate, // ✅ Use converted date
           location,
           description: customMessage,
-          createdBy: user?.sub || undefined, // You can still send the userId if needed in the request body
+          createdBy: isAuthenticated ? user?.sub : "guest", // Set 'guest' if user is not logged in
         },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
       );
 
-      console.log("User ID (createdBy):", user?.sub);
+      console.log(
+        "User ID (createdBy):",
+        isAuthenticated ? user?.sub : "Guest"
+      );
 
       const { eventUrl } = response.data.event;
       if (eventUrl) {
         const eventId = eventUrl.split("/").pop();
         setUniqueURL(eventUrl);
         localStorage.setItem("eventType", eventType);
-
         navigate(`/created-rsvp/${eventId}`);
       } else {
         throw new Error("Event URL not found");
