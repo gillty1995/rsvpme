@@ -3,8 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { useAuth0 } from "@auth0/auth0-react";
 
 import DeleteModal from "../DeleteModal/DeleteModal";
+import Chat from "../Chat/Chat";
 
 import trashStatic from "../../assets/trash.svg";
 import trashGif from "../../assets/trash.gif";
@@ -25,6 +27,9 @@ const CreateRsvp: React.FC = () => {
   );
   const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [rsvpToDelete, setRsvpToDelete] = useState<string | null>(null);
+
+  const { isAuthenticated } = useAuth0();
+  const [showChat, setShowChat] = useState(false);
 
   // Load RSVP list from localStorage on component mount
   useEffect(() => {
@@ -292,6 +297,36 @@ const CreateRsvp: React.FC = () => {
       ) : (
         <p>Loading event details...</p>
       )}
+
+      {isAuthenticated && (
+        <>
+          {/* ✅ Chat Toggle Button (Toggles Chat On/Off) */}
+          <motion.button
+            onClick={() => setShowChat(!showChat)}
+            className="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-500 transition-all z-50"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            💬 Chat
+          </motion.button>
+
+          {/* ✅ Click Outside to Close Chat */}
+          {showChat && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40"
+              onClick={() => setShowChat(false)}
+            />
+          )}
+
+          {/* ✅ Chat Component (No Close Button) */}
+          {showChat && (
+            <div className="fixed bottom-16 right-4 z-50">
+              <Chat eventId={eventId as string} />
+            </div>
+          )}
+        </>
+      )}
+
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

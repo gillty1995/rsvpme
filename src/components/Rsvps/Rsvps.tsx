@@ -6,10 +6,14 @@ import { useNavigate } from "react-router-dom";
 
 import homeStatic from "../../assets/home.svg";
 import homeGif from "../../assets/home.gif";
+import trashStatic from "../../assets/trash.svg";
+import trashGif from "../../assets/trash.gif";
 
 interface RSVP {
+  name: string;
   _id: string;
-  title: string;
+  type: string;
+  location: string;
   description: string;
   uniqueUrl: string;
 }
@@ -21,6 +25,9 @@ const Rsvps: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [hoveredTrashIndex, setHoveredTrashIndex] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -37,7 +44,16 @@ const Rsvps: React.FC = () => {
         });
 
         console.log("API Response:", response.data.events);
-        setRsvps(response.data.events || []);
+        setRsvps(
+          response.data.events.map((event: any) => ({
+            _id: event._id,
+            name: event.name || "Untitled Event",
+            type: event.type || "General Event",
+            location: event.location || "Unknown Location",
+            description: event.description || "No description available",
+            uniqueUrl: event.uniqueUrl,
+          })) || []
+        );
       } catch (err: any) {
         console.error(
           "Error fetching RSVPs:",
@@ -51,6 +67,25 @@ const Rsvps: React.FC = () => {
 
     fetchRsvps();
   }, [isAuthenticated, getAccessTokenSilently]);
+
+  const handleDeleteEvent = async (uniqueUrl: string) => {
+    try {
+      const token = await getAccessTokenSilently();
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/api/events/${uniqueUrl}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setRsvps((prevRsvps) =>
+        prevRsvps.filter((rsvp) => rsvp.uniqueUrl !== uniqueUrl)
+      );
+    } catch (err: any) {
+      console.error("Error deleting event:", err.response?.data || err.message);
+      setError("Error deleting event");
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -103,19 +138,35 @@ const Rsvps: React.FC = () => {
             visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
           }}
         >
-          {rsvps.map((rsvp) => (
+          {rsvps.map((rsvp, index) => (
             <motion.li
               key={rsvp._id}
-              className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between text-center"
+              className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between text-center relative"
               whileHover={{ scale: 1.03 }}
             >
-              <h2 className="text-xl font-bold text-gray-800 ">{rsvp.title}</h2>
-              <p className="text-gray-600 mt-2">{rsvp.description}</p>
+              <h2 className="text-xl font-bold text-gray-800">
+                {rsvp.name || "No Title"} {rsvp.type} at {rsvp.location}
+                {}
+              </h2>
               <button
                 onClick={() => navigate(`/created-rsvp/${rsvp.uniqueUrl}`)}
                 className="mt-4 text-blue-500 font-medium hover:text-blue-700 transition-all duration-300"
               >
                 View RSVP →
+              </button>
+
+              {/* Delete Button */}
+              <button
+                onClick={() => handleDeleteEvent(rsvp.uniqueUrl)}
+                onMouseEnter={() => setHoveredTrashIndex(index)}
+                onMouseLeave={() => setHoveredTrashIndex(null)}
+                className="absolute top-2 right-2 w-5 h-5"
+              >
+                <img
+                  src={hoveredTrashIndex === index ? trashGif : trashStatic}
+                  alt="Delete"
+                  className="w-full h-full object-contain"
+                />
               </button>
             </motion.li>
           ))}
