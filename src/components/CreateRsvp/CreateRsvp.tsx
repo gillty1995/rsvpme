@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -14,10 +14,13 @@ import homeStatic from "../../assets/home.svg";
 import homeGif from "../../assets/home.gif";
 import shareStatic from "../../assets/share.svg";
 import shareGif from "../../assets/share.gif";
+import addBtnStatic from "../../assets/add-btn.svg";
+import addBtnGif from "../../assets/add-btn.gif";
+import addedStatic from "../../assets/added.svg";
 
 const CreateRsvp: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
   const [eventDetails, setEventDetails] = useState<any>(null);
   const [rsvpName, setRsvpName] = useState<string>("");
   const [rsvpList, setRsvpList] = useState<string[]>([]);
@@ -28,8 +31,12 @@ const CreateRsvp: React.FC = () => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
   const [rsvpToDelete, setRsvpToDelete] = useState<string | null>(null);
 
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [showChat, setShowChat] = useState(false);
+
+  const [isAttending, setIsAttending] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load RSVP list from localStorage on component mount
   useEffect(() => {
@@ -55,6 +62,79 @@ const CreateRsvp: React.FC = () => {
     }
   }, [eventId]);
 
+  useEffect(() => {
+    if (isAuthenticated && eventId) {
+      checkIfAttending();
+    }
+  }, [isAuthenticated, eventId]);
+
+  const handleAddToEventList = async () => {
+    setLoading(true);
+    try {
+      const token = await getAccessTokenSilently();
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/events/${eventId}/add-to-list`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setIsAttending(true); // Update state to reflect RSVP status
+    } catch (error) {
+      console.error("Error adding event to list", error);
+      setError("Failed to add event.");
+    }
+    setLoading(false);
+  };
+
+  const checkIfAttending = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/events/my-events`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("My Events API Response:", response.data);
+
+      const attendingEvents = response.data.attendingEvents || [];
+
+      // Log attending event IDs and check for UUID vs ObjectId
+      console.log(
+        "Attending Events IDs:",
+        attendingEvents.map((event: any) => ({
+          id: event._id,
+          type: typeof event._id,
+          uniqueUrl: event.uniqueUrl || "No UUID",
+        }))
+      );
+
+      // Ensure eventId is properly formatted
+      const formattedEventId = (eventId || "").trim();
+      console.log(
+        "Current Event ID:",
+        formattedEventId,
+        "Type:",
+        typeof formattedEventId
+      );
+
+      // ✅ Compare both `_id` (MongoDB ObjectId) and `uniqueUrl` (UUID)
+      const isEventAdded = attendingEvents.some(
+        (event: any) =>
+          event._id.toString().trim() === formattedEventId ||
+          (event.uniqueUrl && event.uniqueUrl.trim() === formattedEventId)
+      );
+
+      console.log("Is attending:", isEventAdded);
+      setIsAttending(isEventAdded);
+    } catch (error) {
+      console.error("Error checking RSVP status", error);
+      setError("Failed to check RSVP status.");
+    }
+  };
+
   // Handle adding an RSVP name to the list
   const handleAddRsvp = () => {
     if (rsvpName.trim() !== "") {
@@ -72,8 +152,8 @@ const CreateRsvp: React.FC = () => {
 
   // Handle deleting an RSVP name from the list
   const handleDeleteRsvp = (name: string) => {
-    setRsvpToDelete(name); // Store the name of the RSVP to delete
-    setDeleteModalOpen(true); // Open the delete modal
+    setRsvpToDelete(name);
+    setDeleteModalOpen(true);
   };
 
   const confirmDelete = () => {
@@ -238,6 +318,46 @@ const CreateRsvp: React.FC = () => {
                 className="w-5 h-5 hover:opacity-80 transition-all duration-300"
               />
             </button>
+            {/* Add to List / Added button */}
+            <div className="relative flex items-center">
+              {isAuthenticated &&
+                eventDetails &&
+                user?.sub !== eventDetails.createdBy &&
+                (!isAttending ? (
+                  <motion.button
+                    onClick={handleAddToEventList}
+                    disabled={loading}
+                    className="py-2 px-4 rounded-lg transition-all duration-300"
+                    onMouseEnter={() => setHoveredNavIndex(2)}
+                    onMouseLeave={() => setHoveredNavIndex(null)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <img
+                      src={hoveredNavIndex === 2 ? addBtnGif : addBtnStatic}
+                      alt="Add to List"
+                      className="w-5 h-5 hover:opacity-80 transition-all duration-300"
+                    />
+                  </motion.button>
+                ) : (
+                  <div className="relative group">
+                    <motion.img
+                      src={addedStatic}
+                      alt="Added"
+                      className="w-5 h-5 opacity-80 cursor-pointer"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    {/* Tooltip appears on hover */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 -top-8 bg-gray-800 text-white text-sm px-4 py-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                      You're attending this event!
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {error && <p className="text-red-500 mt-4">{error}</p>}
             <button
               onClick={handleShareClick}
               className="py-2 px-4 rounded-lg transition-all duration-300"
@@ -300,7 +420,7 @@ const CreateRsvp: React.FC = () => {
 
       {isAuthenticated && (
         <>
-          {/* ✅ Chat Toggle Button (Toggles Chat On/Off) */}
+          {/* Chat Toggle Button (Toggles Chat On/Off) */}
           <motion.button
             onClick={() => setShowChat(!showChat)}
             className="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-500 transition-all z-50"
@@ -310,7 +430,7 @@ const CreateRsvp: React.FC = () => {
             💬 Chat
           </motion.button>
 
-          {/* ✅ Click Outside to Close Chat */}
+          {/* Click Outside to Close Chat */}
           {showChat && (
             <div
               className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -318,7 +438,7 @@ const CreateRsvp: React.FC = () => {
             />
           )}
 
-          {/* ✅ Chat Component (No Close Button) */}
+          {/* Chat Component (No Close Button) */}
           {showChat && (
             <div className="fixed bottom-16 right-4 z-50">
               <Chat eventId={eventId as string} />

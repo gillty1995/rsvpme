@@ -22,12 +22,16 @@ const Rsvps: React.FC = () => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
+  const [attendingEvents, setAttendingEvents] = useState<RSVP[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredTrashIndex, setHoveredTrashIndex] = useState<number | null>(
     null
   );
+  const [hoveredAttendingIndex, setHoveredAttendingIndex] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -43,9 +47,21 @@ const Rsvps: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        console.log("API Response:", response.data.events);
+        console.log("API Response:", response.data);
+
         setRsvps(
-          response.data.events.map((event: any) => ({
+          response.data.createdEvents.map((event: any) => ({
+            _id: event._id,
+            name: event.name || "Untitled Event",
+            type: event.type || "General Event",
+            location: event.location || "Unknown Location",
+            description: event.description || "No description available",
+            uniqueUrl: event.uniqueUrl,
+          })) || []
+        );
+
+        setAttendingEvents(
+          response.data.attendingEvents.map((event: any) => ({
             _id: event._id,
             name: event.name || "Untitled Event",
             type: event.type || "General Event",
@@ -97,6 +113,30 @@ const Rsvps: React.FC = () => {
     );
   }
 
+  const handleRemoveAttendance = async (uniqueUrl: string) => {
+    try {
+      const token = await getAccessTokenSilently();
+      await axios.delete(
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/events/${uniqueUrl}/remove-from-list`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setAttendingEvents((prevEvents) =>
+        prevEvents.filter((event) => event.uniqueUrl !== uniqueUrl)
+      );
+    } catch (err: any) {
+      console.error(
+        "Error removing attendance:",
+        err.response?.data || err.message
+      );
+      setError("Error removing attendance");
+    }
+  };
+
   return (
     <main className="min-h-screen flex flex-col items-center py-16 px-4 bg-gradient-to-r from-gray-300 via-white to-gray-400">
       <motion.h1
@@ -109,69 +149,127 @@ const Rsvps: React.FC = () => {
       </motion.h1>
 
       {/* Home Button */}
-      <button
+      <motion.button
         onClick={() => navigate("/")}
         className="mb-6 flex items-center gap-2 text-blue-500 hover:text-blue-700 transition-all duration-300"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        whileHover={{ scale: 1.05 }}
       >
-        <img
+        <motion.img
           src={isHovered ? homeGif : homeStatic}
           alt="Home"
           className="w-5 h-5"
+          animate={{ opacity: isHovered ? 1 : 0.8 }}
+          transition={{ duration: 0.2 }}
         />
         <span className="text-lg font-medium">Home</span>
-      </button>
+      </motion.button>
 
       {loading && <p className="text-lg text-gray-600">Loading RSVPs...</p>}
       {error && <p className="text-lg text-red-500">{error}</p>}
 
-      {rsvps.length === 0 ? (
-        <p className="text-lg text-gray-700">No RSVPs found.</p>
-      ) : (
-        <motion.ul
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
-          }}
-        >
-          {rsvps.map((rsvp, index) => (
-            <motion.li
-              key={rsvp._id}
-              className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between text-center relative"
-              whileHover={{ scale: 1.03 }}
+      {/* Created Events Section */}
+      <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+        Created Events
+      </h2>
+      <motion.ul
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
+        }}
+      >
+        {rsvps.map((rsvp, index) => (
+          <motion.li
+            key={rsvp._id}
+            className="bg-white p-6 rounded-lg shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <h2 className="text-xl font-bold">
+              {rsvp.name} {rsvp.type} at {rsvp.location}
+            </h2>
+            <button
+              onClick={() => navigate(`/created-rsvp/${rsvp.uniqueUrl}`)}
+              className="mt-4 text-blue-500 hover:text-blue-700 transition-colors duration-300"
             >
-              <h2 className="text-xl font-bold text-gray-800">
-                {rsvp.name || "No Title"} {rsvp.type} at {rsvp.location}
-                {}
-              </h2>
-              <button
-                onClick={() => navigate(`/created-rsvp/${rsvp.uniqueUrl}`)}
-                className="mt-4 text-blue-500 font-medium hover:text-blue-700 transition-all duration-300"
-              >
-                View RSVP →
-              </button>
+              View RSVP →
+            </button>
+            <motion.button
+              onClick={() => handleDeleteEvent(rsvp.uniqueUrl)}
+              onMouseEnter={() => setHoveredTrashIndex(index)}
+              onMouseLeave={() => setHoveredTrashIndex(null)}
+              className="absolute top-2 right-2 w-5 h-5"
+              whileHover={{ scale: 1.2 }}
+            >
+              <motion.img
+                src={hoveredTrashIndex === index ? trashGif : trashStatic}
+                alt="Delete"
+                className="w-full h-full object-contain"
+                animate={{ opacity: hoveredTrashIndex === index ? 1 : 0.8 }}
+                transition={{ duration: 0.2 }}
+              />
+            </motion.button>
+          </motion.li>
+        ))}
+      </motion.ul>
 
-              {/* Delete Button */}
-              <button
-                onClick={() => handleDeleteEvent(rsvp.uniqueUrl)}
+      {/* Attending Events Section */}
+      <h2 className="text-2xl font-semibold text-gray-800 mt-10 mb-4">
+        Attending
+      </h2>
+      <motion.ul
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
+        }}
+      >
+        {attendingEvents.map((event, index) => (
+          <motion.li
+            key={event._id}
+            className="bg-white p-6 rounded-lg shadow-lg relative"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onMouseEnter={() => setHoveredAttendingIndex(index)}
+            onMouseLeave={() => setHoveredAttendingIndex(null)}
+          >
+            <h2 className="text-xl font-bold">
+              {event.name} {event.type} at {event.location}
+            </h2>
+            <button
+              onClick={() => navigate(`/created-rsvp/${event.uniqueUrl}`)}
+              className="mt-4 text-blue-500 hover:text-blue-700 transition-colors duration-300"
+            >
+              View RSVP →
+            </button>
+
+            {/* Delete Attendance Button (Only visible on hover) */}
+            {hoveredAttendingIndex === index && (
+              <motion.button
+                onClick={() => handleRemoveAttendance(event.uniqueUrl)}
                 onMouseEnter={() => setHoveredTrashIndex(index)}
                 onMouseLeave={() => setHoveredTrashIndex(null)}
                 className="absolute top-2 right-2 w-5 h-5"
+                whileHover={{ scale: 1.2 }}
               >
-                <img
+                <motion.img
                   src={hoveredTrashIndex === index ? trashGif : trashStatic}
-                  alt="Delete"
+                  alt="Remove Attendance"
                   className="w-full h-full object-contain"
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
                 />
-              </button>
-            </motion.li>
-          ))}
-        </motion.ul>
-      )}
+              </motion.button>
+            )}
+          </motion.li>
+        ))}
+      </motion.ul>
     </main>
   );
 };

@@ -83,31 +83,58 @@ const Chat: React.FC<ChatProps> = ({ eventId }) => {
     <div className="fixed bottom-20 right-4 bg-white shadow-lg p-4 rounded-lg w-80 max-h-96 overflow-y-auto z-50">
       <h2 className="text-lg font-semibold">Event Chat</h2>
       <div className="mt-2 space-y-2">
-        {messages.map((msg, index) => (
-          <div key={index} className="p-2 rounded-lg bg-gray-200">
-            <span className="block text-xs text-gray-500">{msg.email}</span>
-            <span className="block">{msg.message}</span>
-          </div>
-        ))}
+        {messages.map((msg, index) => {
+          const isUserMessage = msg.userId === user?.sub;
+
+          return (
+            <div
+              key={index}
+              className={`flex ${
+                isUserMessage ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`p-2 max-w-xs break-words rounded-lg shadow ${
+                  isUserMessage
+                    ? "bg-blue-500 text-white self-end"
+                    : "bg-gray-200 text-black self-start"
+                }`}
+              >
+                <span
+                  className={`block text-xs ${
+                    isUserMessage ? "text-gray-800" : "text-gray-500"
+                  }`}
+                >
+                  {isUserMessage ? "You" : msg.email}
+                </span>
+                <span className="block">{msg.message}</span>
+              </div>
+            </div>
+          );
+        })}
         {/* Invisible div to auto-scroll to */}
         <div ref={messagesEndRef} />
       </div>
-      <input
-        type="text"
-        className="w-full p-2 border rounded mt-2"
-        placeholder="Type a message..."
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-      />
-      <motion.button
-        onClick={sendMessage}
-        className="w-full mt-2 bg-blue-500 text-white py-2 rounded"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        Send
-      </motion.button>
+
+      {/* Input Field & Send Button */}
+      <div className="mt-2 flex gap-2">
+        <input
+          type="text"
+          className="flex-1 p-2 border rounded"
+          placeholder="Type a message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <motion.button
+          onClick={sendMessage}
+          className="bg-blue-500 text-white px-3 py-2 rounded transition-all duration-200 hover:bg-blue-600"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          Send
+        </motion.button>
+      </div>
     </div>
   );
 };
