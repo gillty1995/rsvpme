@@ -1,4 +1,3 @@
-// auth0
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -11,6 +10,7 @@ const RsvpForm: React.FC = () => {
   const [eventTime, setEventTime] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [location, setLocation] = useState("");
+  const [locationResults, setLocationResults] = useState<any[]>([]);
   const [, setUniqueURL] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +24,37 @@ const RsvpForm: React.FC = () => {
       console.log("User is logged in. UserID:", user.sub);
     }
   }, [isAuthenticated, user]);
+
+  // 🔍 Fetch location suggestions
+  const handleSearchLocation = async (query: string) => {
+    if (!query) return;
+
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/places/search`,
+        { params: { query } }
+      );
+      setLocationResults(response.data.results || []);
+    } catch (error) {
+      console.error("Error fetching location suggestions", error);
+    }
+  };
+
+  // 📍 Select location from dropdown
+  const handleSelectLocation = (place: any) => {
+    setLocation(place.formatted_address);
+    setLocationResults([]); // Clear suggestions
+  };
+
+  const formatLocation = (fullAddress: string) => {
+    if (!fullAddress) return "Event Location";
+
+    // Split address by comma
+    const addressParts = fullAddress.split(",");
+
+    // Return only the first part (usually the street number & street name)
+    return addressParts[0].trim();
+  };
 
   const handleCreateRSVP = async () => {
     setLoading(true);
@@ -97,7 +128,7 @@ const RsvpForm: React.FC = () => {
         <div className="inline-block">
           <span className="inline-block border-b border-gray-40 font-rale font-regular text-main-text text-3xl">
             {eventName || "Event Title"} {eventType || "Event Type"} at{" "}
-            {location || "Event Location"}!
+            {formatLocation(location)}!
           </span>
         </div>
       </section>
@@ -152,8 +183,8 @@ const RsvpForm: React.FC = () => {
           </div>
         </div>
 
-        {/* More input fields */}
-        <div className="mb-4">
+        {/* Location Input with Autocomplete */}
+        <div className="mb-4 relative">
           <label htmlFor="location" className="block mb-2 text-lg font-medium">
             Event Location
           </label>
@@ -161,10 +192,27 @@ const RsvpForm: React.FC = () => {
             type="text"
             id="location"
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Enter event location"
+            onChange={(e) => {
+              setLocation(e.target.value);
+              handleSearchLocation(e.target.value);
+            }}
+            placeholder="Search for a location..."
             className="w-full p-3 border border-gray-300 rounded-md"
           />
+          {/* Dropdown with location suggestions */}
+          {locationResults.length > 0 && (
+            <ul className="absolute w-full bg-white border border-gray-300 rounded-md mt-1 shadow-md z-50">
+              {locationResults.map((place, index) => (
+                <li
+                  key={index}
+                  onClick={() => handleSelectLocation(place)}
+                  className="p-2 cursor-pointer hover:bg-gray-200"
+                >
+                  {place.formatted_address}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="mb-4">

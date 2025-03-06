@@ -17,6 +17,8 @@ import shareGif from "../../assets/share.gif";
 import addBtnStatic from "../../assets/add-btn.svg";
 import addBtnGif from "../../assets/add-btn.gif";
 import addedStatic from "../../assets/added.svg";
+import mapStatic from "../../assets/map.png";
+import mapGif from "../../assets/map.gif";
 
 const CreateRsvp: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -37,6 +39,13 @@ const CreateRsvp: React.FC = () => {
   const [isAttending, setIsAttending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isMapHovered, setIsMapHovered] = useState(false);
+
+  const formatLocation = (fullAddress: string) => {
+    if (!fullAddress) return "Event Location";
+    return fullAddress.split(",")[0].trim();
+  };
 
   // Load RSVP list from localStorage on component mount
   useEffect(() => {
@@ -191,6 +200,16 @@ const CreateRsvp: React.FC = () => {
     }
   };
 
+  const handleGetDirections = () => {
+    if (eventDetails?.location) {
+      const encodedLocation = encodeURIComponent(eventDetails.location);
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${encodedLocation}`,
+        "_blank"
+      );
+    }
+  };
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-r from-gray-300 via-white to-gray-400">
       <motion.p
@@ -229,7 +248,7 @@ const CreateRsvp: React.FC = () => {
               <>
                 {eventDetails.name || "Event Title"}{" "}
                 {eventDetails.type || "Event Type"} at{" "}
-                {eventDetails.location || "Event Location"}
+                {formatLocation(eventDetails.location)}
               </>
             ) : (
               "Loading event details..."
@@ -286,6 +305,18 @@ const CreateRsvp: React.FC = () => {
             }}
           >
             <strong>Location:</strong> {eventDetails.location}
+            <button
+              onClick={handleGetDirections}
+              onMouseEnter={() => setIsMapHovered(true)}
+              onMouseLeave={() => setIsMapHovered(false)}
+              className="ml-2 transform transition-transform duration-300 hover:scale-110"
+            >
+              <img
+                src={isMapHovered ? mapGif : mapStatic}
+                alt="Get Directions"
+                className="w-4 h-4 transition-opacity duration-300"
+              />
+            </button>
           </motion.p>
           <motion.p
             className="text-lg mb-2"

@@ -4,6 +4,8 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+import DeleteEventOrRsvpModal from "../DeleteEventOrRsvpModal/DeleteEventOrRsvpModal";
+
 import homeStatic from "../../assets/home.svg";
 import homeGif from "../../assets/home.gif";
 import trashStatic from "../../assets/trash.svg";
@@ -32,6 +34,74 @@ const Rsvps: React.FC = () => {
   const [hoveredAttendingIndex, setHoveredAttendingIndex] = useState<
     number | null
   >(null);
+  const [hoveredAttendingTrashIndex, setHoveredAttendingTrashIndex] = useState<
+    number | null
+  >(null);
+  const [hoveredCreatedTrashIndex, setHoveredCreatedTrashIndex] = useState<
+    number | null
+  >(null);
+
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<{
+    name: string;
+    type: string;
+    location: string;
+    uniqueUrl: string;
+  } | null>(null);
+  const [deleteType, setDeleteType] = useState<"event" | "rsvp">("event");
+
+  const confirmDelete = (
+    name: string,
+    type: string,
+    location: string,
+    uniqueUrl: string,
+    deleteType: "event" | "rsvp"
+  ) => {
+    setItemToDelete({ name, type, location, uniqueUrl });
+    setDeleteType(deleteType);
+    setDeleteModalOpen(true);
+  };
+
+  // Executes delete action
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const token = await getAccessTokenSilently();
+      const url =
+        deleteType === "event"
+          ? `${import.meta.env.VITE_API_URL}/api/events/${
+              itemToDelete.uniqueUrl
+            }`
+          : `${import.meta.env.VITE_API_URL}/api/events/${
+              itemToDelete.uniqueUrl
+            }/remove-from-list`;
+
+      await axios.delete(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (deleteType === "event") {
+        setRsvps((prev) =>
+          prev.filter((event) => event.uniqueUrl !== itemToDelete.uniqueUrl)
+        );
+      } else {
+        setAttendingEvents((prev) =>
+          prev.filter((event) => event.uniqueUrl !== itemToDelete.uniqueUrl)
+        );
+      }
+
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (err: any) {
+      setError("Error deleting item");
+    }
+  };
+
+  const formatLocation = (fullAddress: string) => {
+    if (!fullAddress) return "Event Location";
+    return fullAddress.split(",")[0].trim();
+  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -84,25 +154,6 @@ const Rsvps: React.FC = () => {
     fetchRsvps();
   }, [isAuthenticated, getAccessTokenSilently]);
 
-  const handleDeleteEvent = async (uniqueUrl: string) => {
-    try {
-      const token = await getAccessTokenSilently();
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/api/events/${uniqueUrl}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setRsvps((prevRsvps) =>
-        prevRsvps.filter((rsvp) => rsvp.uniqueUrl !== uniqueUrl)
-      );
-    } catch (err: any) {
-      console.error("Error deleting event:", err.response?.data || err.message);
-      setError("Error deleting event");
-    }
-  };
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-300 via-white to-gray-400">
@@ -112,30 +163,6 @@ const Rsvps: React.FC = () => {
       </div>
     );
   }
-
-  const handleRemoveAttendance = async (uniqueUrl: string) => {
-    try {
-      const token = await getAccessTokenSilently();
-      await axios.delete(
-        `${
-          import.meta.env.VITE_API_URL
-        }/api/events/${uniqueUrl}/remove-from-list`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setAttendingEvents((prevEvents) =>
-        prevEvents.filter((event) => event.uniqueUrl !== uniqueUrl)
-      );
-    } catch (err: any) {
-      console.error(
-        "Error removing attendance:",
-        err.response?.data || err.message
-      );
-      setError("Error removing attendance");
-    }
-  };
 
   return (
     <main className="min-h-screen flex flex-col items-center py-16 px-4 bg-gradient-to-r from-gray-300 via-white to-gray-400">
@@ -185,34 +212,53 @@ const Rsvps: React.FC = () => {
         {rsvps.map((rsvp, index) => (
           <motion.li
             key={rsvp._id}
-            className="bg-white p-6 rounded-lg shadow-lg"
+            className="bg-white p-6 rounded-lg shadow-lg relative"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
+            onMouseEnter={() => setHoveredTrashIndex(index)}
+            onMouseLeave={() => setHoveredTrashIndex(null)}
           >
             <h2 className="text-xl font-bold">
-              {rsvp.name} {rsvp.type} at {rsvp.location}
+              {rsvp.name} {rsvp.type} at {formatLocation(rsvp.location)}
             </h2>
+
             <button
               onClick={() => navigate(`/created-rsvp/${rsvp.uniqueUrl}`)}
               className="mt-4 text-blue-500 hover:text-blue-700 transition-colors duration-300"
             >
               View RSVP →
             </button>
-            <motion.button
-              onClick={() => handleDeleteEvent(rsvp.uniqueUrl)}
-              onMouseEnter={() => setHoveredTrashIndex(index)}
-              onMouseLeave={() => setHoveredTrashIndex(null)}
-              className="absolute top-2 right-2 w-5 h-5"
-              whileHover={{ scale: 1.2 }}
-            >
-              <motion.img
-                src={hoveredTrashIndex === index ? trashGif : trashStatic}
-                alt="Delete"
-                className="w-full h-full object-contain"
-                animate={{ opacity: hoveredTrashIndex === index ? 1 : 0.8 }}
-                transition={{ duration: 0.2 }}
-              />
-            </motion.button>
+
+            {/* Trash Button animation triggers only when hovering over it) */}
+            {hoveredTrashIndex === index && (
+              <motion.button
+                onClick={() =>
+                  confirmDelete(
+                    rsvp.name,
+                    rsvp.type,
+                    formatLocation(rsvp.location),
+                    rsvp.uniqueUrl,
+                    "event"
+                  )
+                }
+                className="absolute top-2 right-2 w-5 h-5"
+                onMouseEnter={() => setHoveredCreatedTrashIndex(index)}
+                onMouseLeave={() => setHoveredCreatedTrashIndex(null)}
+                whileHover={{ scale: 1.2 }}
+              >
+                <motion.img
+                  src={
+                    hoveredCreatedTrashIndex === index ? trashGif : trashStatic
+                  }
+                  alt="Delete"
+                  className="w-full h-full object-contain"
+                  animate={{
+                    opacity: hoveredCreatedTrashIndex === index ? 1 : 0.8,
+                  }}
+                  transition={{ duration: 0.2 }}
+                />
+              </motion.button>
+            )}
           </motion.li>
         ))}
       </motion.ul>
@@ -240,7 +286,7 @@ const Rsvps: React.FC = () => {
             onMouseLeave={() => setHoveredAttendingIndex(null)}
           >
             <h2 className="text-xl font-bold">
-              {event.name} {event.type} at {event.location}
+              {event.name} {event.type} at {formatLocation(event.location)}
             </h2>
             <button
               onClick={() => navigate(`/created-rsvp/${event.uniqueUrl}`)}
@@ -252,17 +298,31 @@ const Rsvps: React.FC = () => {
             {/* Delete Attendance Button (Only visible on hover) */}
             {hoveredAttendingIndex === index && (
               <motion.button
-                onClick={() => handleRemoveAttendance(event.uniqueUrl)}
-                onMouseEnter={() => setHoveredTrashIndex(index)}
-                onMouseLeave={() => setHoveredTrashIndex(null)}
+                onClick={() =>
+                  confirmDelete(
+                    event.name,
+                    event.type,
+                    formatLocation(event.location),
+                    event.uniqueUrl,
+                    "rsvp"
+                  )
+                }
+                onMouseEnter={() => setHoveredAttendingTrashIndex(index)}
+                onMouseLeave={() => setHoveredAttendingTrashIndex(null)}
                 className="absolute top-2 right-2 w-5 h-5"
                 whileHover={{ scale: 1.2 }}
               >
                 <motion.img
-                  src={hoveredTrashIndex === index ? trashGif : trashStatic}
+                  src={
+                    hoveredAttendingTrashIndex === index
+                      ? trashGif
+                      : trashStatic
+                  }
                   alt="Remove Attendance"
                   className="w-full h-full object-contain"
-                  animate={{ opacity: 1 }}
+                  animate={{
+                    opacity: hoveredAttendingTrashIndex === index ? 1 : 0.8,
+                  }}
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
@@ -270,6 +330,15 @@ const Rsvps: React.FC = () => {
           </motion.li>
         ))}
       </motion.ul>
+      {/* Delete Modal */}
+      <DeleteEventOrRsvpModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirmed}
+        itemName={itemToDelete?.name || ""}
+        itemType={itemToDelete?.type || ""}
+        itemLocation={itemToDelete?.location || ""}
+      />
     </main>
   );
 };
