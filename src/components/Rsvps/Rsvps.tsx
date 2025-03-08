@@ -28,6 +28,7 @@ const Rsvps: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+
   const [hoveredTrashIndex, setHoveredTrashIndex] = useState<number | null>(
     null
   );
@@ -102,6 +103,14 @@ const Rsvps: React.FC = () => {
     if (!fullAddress) return "Event Location";
     return fullAddress.split(",")[0].trim();
   };
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 900);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -230,7 +239,7 @@ const Rsvps: React.FC = () => {
             </button>
 
             {/* Trash Button animation triggers only when hovering over it) */}
-            {hoveredTrashIndex === index && (
+            {isMobile || hoveredTrashIndex === index ? (
               <motion.button
                 onClick={() =>
                   confirmDelete(
@@ -258,7 +267,7 @@ const Rsvps: React.FC = () => {
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
-            )}
+            ) : null}
           </motion.li>
         ))}
       </motion.ul>
@@ -296,7 +305,7 @@ const Rsvps: React.FC = () => {
             </button>
 
             {/* Delete Attendance Button (Only visible on hover) */}
-            {hoveredAttendingIndex === index && (
+            {isMobile || hoveredAttendingIndex === index ? (
               <motion.button
                 onClick={() =>
                   confirmDelete(
@@ -326,7 +335,7 @@ const Rsvps: React.FC = () => {
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
-            )}
+            ) : null}
           </motion.li>
         ))}
       </motion.ul>

@@ -9,6 +9,8 @@ import RsvpForm from "./components/RsvpForm/RsvpForm";
 import CreateRsvp from "./components/CreateRsvp/CreateRsvp";
 import Rsvps from "./components/Rsvps/Rsvps";
 import Footer from "./components/Footer/Footer";
+import TermsOfService from "./components/TermsOfService/TermsOfService";
+import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
 
 import RSVPImage from "./assets/beach-day.jpg";
 import RSVPImage2 from "./assets/friends.jpg";
@@ -28,7 +30,7 @@ interface ImageData {
 const Home: React.FC = () => {
   const aboutRef = useRef<null | HTMLDivElement>(null);
   const contactRef = useRef<null | HTMLDivElement>(null);
-  const rsvpsRef = useRef<null | HTMLDivElement>(null);
+  // const rsvpsRef = useRef<null | HTMLDivElement>(null);
 
   const images: ImageData[] = [
     { id: 1, src: RSVPImage },
@@ -47,8 +49,8 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-main-bg flex flex-col">
-      <Header aboutRef={aboutRef} contactRef={contactRef} rsvpsRef={rsvpsRef} />
+    <div className="min-h-screen bg-main-bg flex flex-col overflow-x-hidden">
+      <Header aboutRef={aboutRef} contactRef={contactRef} />
       <MainContent images={images} onCreateRSVP={handleCreateRsvp} />
       <div ref={aboutRef}>
         <About />
@@ -69,6 +71,8 @@ const App: React.FC = () => {
         <Route path="/rsvp-form" element={<RsvpForm />} />
         <Route path="/created-rsvp/:eventId" element={<CreateRsvp />} />
         <Route path="/my-events" element={<Rsvps />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
       </Routes>
     </Router>
   );

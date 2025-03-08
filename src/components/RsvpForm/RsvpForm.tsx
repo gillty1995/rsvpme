@@ -123,7 +123,7 @@ const RsvpForm: React.FC = () => {
       </p>
       <section className="text-xl mb-8">
         <h2 className="font-rale font-regular text-main-text text-3xl mb-4">
-          Welcome to my RSVP List for
+          Welcome to my RSVP for
         </h2>
         <div className="inline-block">
           <span className="inline-block border-b border-gray-40 font-rale font-regular text-main-text text-3xl">

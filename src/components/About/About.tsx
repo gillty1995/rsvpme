@@ -33,7 +33,7 @@ const About: React.FC = () => {
   }, [inView, controls]);
 
   return (
-    <section ref={ref} className=" py-16 px-6">
+    <section ref={ref} className="py-16 px-6">
       <div className="max-w-5xl mx-auto text-center">
         <h2 className="text-3xl font-rale text-main-text mb-12">
           How RSVP Me Works
@@ -41,7 +41,7 @@ const About: React.FC = () => {
 
         {/* Steps container */}
         <motion.div
-          className="flex justify-center items-center space-x-8"
+          className="flex flex-col sm:flex-row justify-center items-center space-y-8 sm:space-y-0 sm:space-x-8"
           initial="hidden"
           animate={controls}
           variants={{
