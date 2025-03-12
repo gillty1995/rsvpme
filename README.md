@@ -2,6 +2,8 @@ RSVPMe - Effortless Event Planning
 
 RSVPMe is a simple and intuitive RSVP web application that allows users to create events, send invitations, and track attendance—all without the need to register or log in. The app enables event creators to easily generate an RSVP link that can be shared with guests. Guests can simply click the link, add their name to the RSVP list, and see who else is attending. If event creators or guests want to edit their RSVP or use additional features (like the chat), they will need to register or log in.
 
+Link to backend: https://github.com/gillty1995/rsvpme_api
+
 Technologies & Tools
 
 RSVPMe was built using a component-based architecture with the following technologies:
