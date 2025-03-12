@@ -161,7 +161,7 @@ const Header: React.FC<HeaderProps> = ({ aboutRef, contactRef }) => {
                       <motion.button
                         className="hover:text-gray-300"
                         onClick={() => {
-                          logout();
+                          handleLogout();
                           setIsMenuOpen(false);
                         }}
                         whileHover={{ scale: 1.1 }}
