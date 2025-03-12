@@ -37,6 +37,11 @@ export const eventOptions = [
     "Party",
     
     // Life Events
+    "Date",
+    "Dinner",
+    "Lunch",
+    "Brunch",
+    "Breakfast",
     "Birthday Party",
     "Anniversary Party",
     "Anniversary Dinner",
@@ -66,7 +71,6 @@ export const eventOptions = [
     "Poker Night",
     "Bonfire",
     "Team Meeting",
-    "Lunch",
     "Dinner Party",
     "Pool Party",
     "Pizza Party",

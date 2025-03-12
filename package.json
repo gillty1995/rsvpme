@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && scp -i /Users/gooee/Desktop/AWS/awskey.pem -r dist ubuntu@3.144.90.8:~/rsvpme_frontend && ssh -i /Users/gooee/Desktop/AWS/awskey.pem ubuntu@3.144.90.8 'sudo rm -rf /var/www/rsvpme_frontend/* && sudo mkdir -p /var/www/rsvpme_frontend && sudo mv ~/rsvpme_frontend/dist/* /var/www/rsvpme_frontend/ && sudo chown -R www-data:www-data /var/www/rsvpme_frontend && sudo chmod -R 755 /var/www/rsvpme_frontend && sudo systemctl restart nginx'"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",

@@ -46,6 +46,23 @@ const Header: React.FC<HeaderProps> = ({ aboutRef, contactRef }) => {
     setIsMenuOpen(false); // Close menu when clicking a link
   };
 
+  const handleLogout = async () => {
+    try {
+      // Call backend logout API first
+      await fetch("https://api.rsvpme.hec.to/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      // Perform logout using Auth0
+      logout({
+        logoutParams: { returnTo: "https://rsvpme.hec.to" },
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <>
       <header className="bg-gradient-to-b from-header-bg to-bg-gradient p-4 flex justify-between items-center relative">
@@ -73,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({ aboutRef, contactRef }) => {
                   <li>
                     <motion.button
                       className="text-white text-lg hover:text-gray-200"
-                      onClick={() => logout()}
+                      onClick={handleLogout}
                       whileHover={{ scale: 1.1 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >

@@ -233,7 +233,7 @@ const RsvpForm: React.FC = () => {
             htmlFor="customMessage"
             className="block mb-2 text-lg font-medium"
           >
-            Custom Message (Optional)
+            Custom Message
           </label>
           <textarea
             id="customMessage"
